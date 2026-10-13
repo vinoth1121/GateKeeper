@@ -1,0 +1,52 @@
+================================================================================
+GATE 8 EVIDENCE: Trusted-Proxy X-Forwarded-For Rightmost-Untrusted Algorithm
+================================================================================
+Date: 2026-10-13T20:22:01+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Command:
+mvn test -pl gateway "-Dtest=XffSpoofingTest"
+
+Matrix of Scenarios Verified:
+1. Untrusted direct peer (`203.0.113.5`):
+   - Injected header `X-Forwarded-For: 1.2.3.4` is completely IGNORED.
+   - Client IP resolved to direct peer `203.0.113.5` (`xffUsed=false`).
+
+2. Trusted direct peer (`127.0.0.1`):
+   - Header `X-Forwarded-For: 1.2.3.4, trusted-proxy-1` walks right-to-left.
+   - Correctly resolves rightmost untrusted entry `1.2.3.4` (`xffUsed=true`).
+
+3. Trusted peer with only trusted proxies in chain:
+   - Header `X-Forwarded-For: 10.0.0.1, 127.0.0.1`.
+   - Safely falls back to direct peer `127.0.0.1` (`xffUsed=false`).
+
+4. Trusted peer with absent XFF header:
+   - Safely resolves direct peer `127.0.0.1` (`xffUsed=false`).
+
+5. Trusted peer with whitespace / empty entries in chain:
+   - Header `X-Forwarded-For: 1.2.3.4, , 10.0.0.1`.
+   - Tolerates malformed entries, resolving `1.2.3.4` (`xffUsed=true`).
+
+6. CIDR trust configuration (`10.0.0.0/8`):
+   - In-range peer `10.255.42.1` trusted -> extracts client IP `1.2.3.4` (`xffUsed=true`).
+   - Out-of-range peer `192.168.1.1` untrusted -> rejects XFF, uses peer `192.168.1.1` (`xffUsed=false`).
+   - Single-host CIDR (`10.0.0.1/32`) matches exact peer only.
+
+7. IPv6 loopback (`::1`) and external addresses:
+   - Exact match semantics verified for IPv6 addresses.
+
+8. Malformed CIDR resilience:
+   - Invalid masks (`/33`) and non-IP formats fail closed; never trust invalid entries.
+
+9. Empty trusted proxy configuration:
+   - Gateway defaults to zero trust; all XFF headers ignored, remoteAddr strictly enforced.
+
+Summary:
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+Total time: 13.638 s
+
+OVERALL OUTCOME: PASS
+================================================================================

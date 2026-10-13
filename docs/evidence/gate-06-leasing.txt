@@ -1,0 +1,70 @@
+================================================================================
+GATE 6 EVIDENCE: Leasing Conservation and Token Return
+================================================================================
+Date: 2026-10-13T20:20:12+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+--------------------------------------------------------------------------------
+ATTEMPT 1: FAILED
+--------------------------------------------------------------------------------
+Date: 2026-10-13T20:14:52+05:30
+Commit: 1c683fe3bc3b3992b8d0e74b331ea077053e144a
+Command:
+mvn test -pl gateway "-Dtest=LeaseOvershootTest,ReturnTokensTest"
+
+Outcome: FAIL
+Details:
+- LeaseOvershootTest: PASS (1 test run)
+  * elapsed_s=3.057, total_granted=157, checks=385
+  * per_node A/B/C=51/50/56, theoretical=161, bound=170, overshoot_vs_theoretical=-4
+  * local hit ratio (node A): 0.398
+- ReturnTokensTest: FAIL (line 81)
+  * central tokens after lease grant = 0
+  * central tokens after sweep = 20000 (capped at capacity 20000 milli)
+  * gatekeeper_lease_expired_tokens_total = 19000.0
+  * AssertionFailedError at ReturnTokensTest.java:81 on node2.check().allowed()
+  * Root Cause: EMPTY_WAIT_MS was hardcoded to 50ms, causing node2 initial lease acquisition to time out before Redis asynchronous response returned on Docker Desktop.
+
+Fix:
+- Increased EMPTY_WAIT_MS in LocalLeaseManager.java from 50ms to 250ms.
+- Committed in commit 68d9e1755c11c0f3144103ffa43e7d00fd7d7282.
+
+--------------------------------------------------------------------------------
+ATTEMPT 2: PASSED
+--------------------------------------------------------------------------------
+Date: 2026-10-13T20:20:12+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Command:
+mvn test -pl gateway "-Dtest=LeaseOvershootTest,ReturnTokensTest"
+
+Outcome: PASS
+Details:
+- LeaseOvershootTest:
+  * elapsed_s = 3.198
+  * total_granted = 162
+  * checks = 191
+  * per_node A/B/C = 56/56/50
+  * theoretical = 163
+  * bound = 172
+  * overshoot_vs_theoretical = -1 (strict conservation satisfied)
+  * local hit ratio (node A) = 0.862
+  * Result: Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.29 s
+
+- ReturnTokensTest:
+  * node1 initial check: allowed=true, remaining=19, retryAfterMs=0, resetEpochMs=1791903010347, source=LOCAL, reason=ok
+  * central tokens after lease grant = 0
+  * central tokens after sweep = 20000 (capped at capacity 20000 milli)
+  * gatekeeper_lease_expired_tokens_total = 19000.0 (>= 1000.0 verified)
+  * node2 check: allowed=true, remaining=19, retryAfterMs=0, resetEpochMs=1791903010915, source=LOCAL, reason=ok
+  * shutdown returned = 19480 milli-tokens (> 0 verified)
+  * Result: Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.978 s
+
+Summary:
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+Total time: 26.650 s
+
+OVERALL OUTCOME: PASS
+================================================================================

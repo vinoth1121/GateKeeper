@@ -1,0 +1,32 @@
+================================================================================
+GATE 7 EVIDENCE: Authentication & Constant-Time Security
+================================================================================
+Date: 2026-10-13T20:21:30+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Command:
+mvn test -pl gateway "-Dtest=AdminKeyGuardTest,ConstantTimeCompareTest"
+
+Test Suites Executed:
+1. io.gatekeeper.tenant.ConstantTimeCompareTest
+   - Constant-time string and byte array comparisons via MessageDigest.isEqual
+   - Prevents timing side-channel attacks on API key verification
+   - Verified equal strings match, unequal lengths fail safely, unequal contents fail safely, null values handled safely
+   - Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.299 s
+
+2. io.gatekeeper.web.AdminKeyGuardTest
+   - Enforces admin endpoint authorization via `X-Admin-Key` header
+   - Valid key passes with authorized response
+   - Missing key, blank key, wrong key, truncated key return uniform 401 Unauthorized
+   - Response body and headers maintain constant shape to prevent information leakage
+   - Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.616 s
+
+Summary:
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+Total time: 31.289 s
+
+OVERALL OUTCOME: PASS
+================================================================================

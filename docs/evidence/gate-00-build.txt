@@ -1,0 +1,59 @@
+================================================================================
+GATE 0 EVIDENCE: Build green (mvn compile & test-compile & spotless:check)
+================================================================================
+Date: 2026-10-13T20:00:00+05:30
+Commit: c8936abffa102ff3686fd134a0ddad5909d292ec
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Attempt 1:
+Date: 2026-10-13T19:54:21+05:30
+Command: mvn test-compile
+Outcome: PASS
+Details:
+- gatekeeper-gateway: SUCCESS [7.514 s]
+- gatekeeper-mock-upstream: SUCCESS [0.437 s]
+- gatekeeper-parent: SUCCESS [0.002 s]
+- Total 56 source files + 20 test files compiled with javac [debug parameters release 21]
+
+Spotless Check:
+Date: 2026-10-13T19:59:43+05:30
+Command: mvn spotless:check -pl gateway
+Outcome: PASS
+Details:
+- Spotless.Java is keeping 76 files clean - 0 needs changes to be clean, 76 clean.
+
+OVERALL OUTCOME: PASS
+================================================================================
+================================================================================
+GATE 0 EVIDENCE: Full Reactor Build & Verification (mvn -B verify)
+================================================================================
+Date: 2026-10-13T20:25:00+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Run (Full Verify):
+Date: 2026-10-13T20:24:24+05:30
+Command: mvn -B verify
+Outcome: PASS
+Details:
+- GateKeeper Gateway: SUCCESS [01:16 min]
+- GateKeeper Mock Upstream: SUCCESS [25.412 s]
+- GateKeeper Parent: SUCCESS [0.002 s]
+- Total Build Time: 01:44 min
+- Reactor Summary: 3/3 projects SUCCESS
+- Gateway: 18 test suites executed and passed (unit tests, Testcontainers Redis tests, LLM proxy, leasing)
+- Mock-Upstream: 6 test suites executed and passed (SpringBootTest web slice, SSE completions, chaos config)
+
+Spotless Check:
+Date: 2026-10-13T20:24:57+05:30
+Command: mvn spotless:check -pl gateway
+Outcome: PASS
+Details:
+- Spotless.Java is keeping 75 files clean - 0 needs changes to be clean, 75 clean.
+
+OVERALL OUTCOME: PASS
+================================================================================

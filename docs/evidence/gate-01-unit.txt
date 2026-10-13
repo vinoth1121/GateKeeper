@@ -1,0 +1,54 @@
+================================================================================
+GATE 1 EVIDENCE: Pure Java Unit Tests (Lua math, milli-tokens, TTL, hashing, CEL)
+================================================================================
+Date: 2026-10-13T20:12:58+05:30
+Commit: 1c683fe3bc3b3992b8d0e74b331ea077053e144a
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Command:
+mvn test -pl gateway "-Dtest=HashResolveTest,ConstantTimeCompareTest,HeaderSanitizerTest,GradientBehaviorTest,SampleIgnoreTest,SheddingOrderTest,CelPolicyTest"
+
+Test Suite Breakdown:
+1. io.gatekeeper.adaptive.GradientBehaviorTest
+   - Warmup: start=4 checkpoints=[40, 120, 249, 425, 650, 924, 1024] stable=1024
+   - Recovery (50ms): congestedMin=390 congestedEnd=390 firstRecovery=394 recovered=656 gain=266
+   - Congested (500ms): stable=1024 trace=[972, 881, 799, 724, 657, 604, 556, 512, 471, 434, 425, 416, 407, 399, 390] min=390 shrink=634
+   - Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+
+2. io.gatekeeper.adaptive.SampleIgnoreTest
+   - After errors: shortRttMs=0.0 longRttMs=50.0 limit=13 (limitBefore=13)
+   - After refill: shortRttMs=50.0 limit=17
+   - Control (success samples): before=13 after=10
+   - Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+
+3. io.gatekeeper.adaptive.SheddingOrderTest
+   - Inflight=6 p2=ShedDecision[allowed=false, statusWhenShed=429, retryAfterSeconds=1]
+   - Inflight=9 p1=ShedDecision[allowed=false, statusWhenShed=503, retryAfterSeconds=1]
+   - Inflight=10 p0=ShedDecision[allowed=true, statusWhenShed=0, retryAfterSeconds=0] waitedMs=100
+   - Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+
+4. io.gatekeeper.policy.CelPolicyTest
+   - Syntax validation, sandbox enforcement, compile error column position
+   - Output: CEL Syntax Error Verified: mismatched input '+' expecting {'[', '{', '(', '.', '-', '!', 'true', 'false', 'null', NUM_FLOAT, NUM_INT, NUM_UINT, STRING, BYTES, IDENTIFIER} at column 3
+   - Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+
+5. io.gatekeeper.tenant.ConstantTimeCompareTest
+   - Constant-time equals with dummy comparisons against timing attacks
+   - Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+
+6. io.gatekeeper.tenant.HashResolveTest
+   - SHA-256 API key hashing, tenant resolution, key extraction, tier assignment
+   - Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+
+7. io.gatekeeper.web.HeaderSanitizerTest
+   - Hop-by-hop headers stripped, rate-limit headers preserved, downstream safety
+   - Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+
+Summary:
+Tests run: 41, Failures: 0, Errors: 0, Skipped: 0
+Total time: 19.751 s
+
+OVERALL OUTCOME: PASS
+================================================================================

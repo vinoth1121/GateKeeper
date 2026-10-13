@@ -33,7 +33,7 @@ public class LeaseConfiguration {
     /** No-op FaultInjector so the guard has a hook even without the web chaos bean. */
     @Bean
     @ConditionalOnMissingBean(FaultInjector.class)
-    public FaultInjector gateKeeperFaultInjector() {
+    public FaultInjector noopFaultInjector() {
         return new FaultInjector() {
         };
     }

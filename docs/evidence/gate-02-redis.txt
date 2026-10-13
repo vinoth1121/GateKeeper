@@ -1,0 +1,42 @@
+================================================================================
+GATE 2 EVIDENCE: Redis Integration Tests via Testcontainers (Redis 7.4-alpine)
+================================================================================
+Date: 2026-10-13T20:13:54+05:30
+Commit: 1c683fe3bc3b3992b8d0e74b331ea077053e144a
+Java Version: 21.0.12 (Eclipse Adoptium)
+Testcontainers Version: 1.21.4
+Redis Image: redis:7.4-alpine
+Spring Boot: 3.5.16
+
+Command:
+mvn test -pl gateway "-Dtest=ClockEdgeTest,KeyExpiryTest,ScriptLoadTest,TokenBucketConcurrencyTest,SlidingWindowExactnessTest"
+
+Test Suites Executed:
+1. io.gatekeeper.limiter.ClockEdgeTest
+   - Verified token bucket refill and backward clock jump behavior against Redis TIME command.
+   - Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.18 s
+
+2. io.gatekeeper.limiter.KeyExpiryTest
+   - Verified that Redis keys for token buckets and sliding window logs receive expected TTLs based on refill rate and capacity.
+   - Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.662 s
+
+3. io.gatekeeper.limiter.ScriptLoadTest
+   - Tested LuaScriptManager caching SHA1 and handling NOSCRIPT error by reloading script after SCRIPT FLUSH.
+   - Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.536 s
+
+4. io.gatekeeper.limiter.SlidingWindowExactnessTest
+   - Multi-threaded virtual thread hammer test verifying that sliding window log never admits more than 50 requests in any 1-second rolling window.
+   - Output: allowed_total=150, max_in_any_1s_window=50
+   - Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.292 s
+
+5. io.gatekeeper.limiter.TokenBucketConcurrencyTest
+   - Concurrency stress test across hundreds of virtual threads on a token bucket with burst capacity and refill rate.
+   - Output: allowed_total=194, total_checks=53977
+   - Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.037 s
+
+Summary:
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+Total time: 46.249 s
+
+OVERALL OUTCOME: PASS
+================================================================================

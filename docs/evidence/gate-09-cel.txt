@@ -1,0 +1,51 @@
+================================================================================
+GATE 9 EVIDENCE: CEL Policy Safety, Compiler Errors & Sandbox Scoping
+================================================================================
+Date: 2026-10-13T20:22:28+05:30
+Commit: 68d9e1755c11c0f3144103ffa43e7d00fd7d7282
+Java Version: 21.0.12 (Eclipse Adoptium)
+Spring Boot: 3.5.16
+Spring Cloud: 2025.0.3 (SCG Server MVC 4.3.5)
+
+Command:
+mvn test -pl gateway "-Dtest=CelPolicyTest"
+
+Test Suite Breakdown & Safety Assertions:
+1. Dry-Run Evaluation & Context Matching:
+   - Valid expression: `request.path == '/demo/hello'`
+   - Against matching context: valid=true, matched=true, error=null
+   - Against non-matching context: valid=true, matched=false, error=null
+   - Verified dry-run does not alter live routing tables or policy versions.
+
+2. Syntax Error Position & Detailed Diagnostics:
+   - Malformed expression tested: `1 ++`
+   - Validation transcript:
+     valid: false
+     position: 3
+     error: "mismatched input '+' expecting {'[', '{', '(', '.', '-', '!', 'true', 'false', 'null', NUM_FLOAT, NUM_INT, NUM_UINT, STRING, BYTES, IDENTIFIER}"
+   - Compile-time error successfully conveys exact line/column position to policy author.
+
+3. Expression Size Limits:
+   - Evaluated expression exceeding maxExpressionBytes (4096 bytes):
+     "true && " + "a".repeat(5000)
+   - Outcome: Rejected with "maximum allowed size" error before parsing.
+
+4. Sandbox Scoping & Numeric Clamping:
+   - Rule published via publishSandbox with oversized parameters:
+     requested capacity: 50,000
+     requested refill rate: 1,000.0/sec
+     requested window: 500 ms
+   - Clamped boundaries enforced:
+     clamped capacity <= 100
+     clamped refill <= 50.0/sec
+     clamped window >= 1000 ms
+   - Tenant isolation verified:
+     `demo-sandbox` matches the sandbox policy.
+     Production tenant (`tenant-pro`) is completely unaffected and resolves `default-rule`.
+
+Summary:
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+Total time: 15.188 s
+
+OVERALL OUTCOME: PASS
+================================================================================
