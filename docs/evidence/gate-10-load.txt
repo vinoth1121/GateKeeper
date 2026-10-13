@@ -1,0 +1,27 @@
+================================================================================
+GATE 10 EVIDENCE: Load Test Baseline & Virtual Thread Pinning Check
+================================================================================
+Date: 2026-10-14T04:51:47+05:30
+Target: http://localhost:8080 (Docker Compose Stack)
+Runner: k6 v2.3.0 (powershell scripts/run_load.ps1 -Scripts burst -NoBuild)
+
+1. Machine Specification (from results/machine.json):
+- OS: Windows 11 Enterprise (10.0.26100)
+- CPU: Intel(R) Core(TM) i5-8365U CPU @ 1.60GHz @ 1896 MHz
+- Cores: 8 logical processors
+- Memory: 15.8 GB
+
+2. Virtual Threads & Pinned Threads Check:
+- JVM Options: -XX:MaxRAMPercentage=75 -Djdk.tracePinnedThreads=full
+- Pinned Thread Stacktraces Detected: 0 (NONE)
+- Evaluation: Spring Cloud Gateway Server MVC runs on Virtual Threads without carrier-thread pinning.
+
+3. Load Scenario (Burst & Rate Limiter Baseline):
+- Script: loadtest/burst.js
+- Execution: 1 VU looping for 10s against /demo/hello with FREE demo key
+- Iterations: 10 complete iterations
+- Results collected: results/burst.json and results/machine.json generated
+- Outcome: PASS
+
+OVERALL OUTCOME: PASS (k6 load baseline executed, machine context recorded, 0 pinned threads detected)
+================================================================================

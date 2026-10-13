@@ -29,7 +29,7 @@ public class UpstreamController {
             "User-Agent", "Accept", "Accept-Language", "Content-Type", "Host",
             "X-Request-Id", "X-Forwarded-For", "X-Forwarded-Proto");
 
-    @GetMapping("/hello")
+    @GetMapping({"/hello", "/demo/hello"})
     public ResponseEntity<HelloResponse> hello() throws InterruptedException {
         chaos.applyLatency();
         ChaosConfig config = chaos.get();
@@ -40,7 +40,7 @@ public class UpstreamController {
         return ResponseEntity.ok(new HelloResponse("hello from mock-upstream", config.latencyMs()));
     }
 
-    @GetMapping("/echo")
+    @GetMapping({"/echo", "/demo/echo"})
     public EchoResponse echo(HttpServletRequest request) {
         Map<String, String> headers = new LinkedHashMap<>();
         for (String name : ECHOED_HEADERS) {

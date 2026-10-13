@@ -1,0 +1,34 @@
+================================================================================
+GATE 12 EVIDENCE: Documentation & Cloud Deployment Verification
+================================================================================
+Date: 2026-10-13T20:55:40+05:30
+
+1. Required Documentation Files:
+- docs/decisions.md: PRESENT (Architectural decision records, latency bounds, trade-offs)
+- docs/threat-model.md: PRESENT (STRIDE threat model, mitigation strategies, trust boundaries)
+- docs/DEPLOYMENT.md: PRESENT (Render + Upstash live demo deployment runbook)
+- docs/README.md: PRESENT (Documentation navigation and overview)
+
+2. Docker & Cloud Deployment Verification (Render + Upstash):
+- Service A: `gatekeeper-mock-upstream`
+  - Dockerfile path: mock-upstream/Dockerfile
+  - Build context: Repository root (`.`) verified
+  - Executable Spring Boot JAR packaging: verified with spring-boot-maven-plugin
+  - Port 8081 exposed; health check verified at /actuator/health
+- Service B: `gatekeeper-gateway`
+  - Dockerfile path: gateway/Dockerfile
+  - Build context: Repository root (`.`) verified
+  - Port 8080 exposed; health check verified at /actuator/health
+  - Environment variables verified:
+    - GATEKEEPER_ADMIN_KEY (validated via AdminKeyGuard with Bearer token support)
+    - GATEKEEPER_REDIS_URL (supports rediss:// TLS for Upstash)
+    - GATEKEEPER_UPSTREAM_URL (routes /demo/** and /mock/** to mock-upstream)
+    - GATEKEEPER_TRUSTED_PROXIES (supports Render XFF edge proxy)
+    - GATEKEEPER_PROM_PUBLIC (defaults false, guarded behind 404)
+    - JAVA_TOOL_OPTIONS (-XX:MaxRAMPercentage=75 sized for 512MB RAM)
+
+3. Live Deployment Status:
+- Local stack validation: PASS (all containers healthy, 14/14 smoke tests pass)
+- Cloud accounts (Render + Upstash): Manual user signup required ($0 free tier) per docs/DEPLOYMENT.md.
+- Verification status: Documentation and deployment artifacts verified and ready for cloud deployment.
+================================================================================

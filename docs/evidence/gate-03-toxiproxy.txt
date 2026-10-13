@@ -1,0 +1,38 @@
+================================================================================
+GATE 3 EVIDENCE: Fault injection via Toxiproxy & Resilience4j Circuit Breaker
+================================================================================
+Date: 2026-10-14T04:45:00+05:30
+Target: http://localhost:8080 (Redis at redis://toxiproxy:26379)
+Command: powershell -File scripts/test_fault.ps1
+
+1. Baseline Check:
+- Proxy setup: scripts/toxiproxy_setup.ps1 setup (0.0.0.0:26379 -> redis:6379)
+- Breaker state: CLOSED
+- Outcome: PASS (baseline requests return 200 OK)
+
+2. Latency Fault Injection (+100ms downstream delay):
+- Command: powershell -File scripts/toxiproxy_setup.ps1 latency 100
+- Behavior: Injected 100ms latency on Redis traffic.
+- Result: Gateway survived within callTimeoutMs (300ms deadline).
+- Status code: 200 OK
+- Outcome: PASS
+
+3. Outage Fault Injection (Redis response timeout):
+- Command: powershell -File scripts/toxiproxy_setup.ps1 timeout
+- Behavior: Redis traffic hangs (simulating hard Redis partition / hang).
+- Requests sent: 25 requests under outage condition.
+- Resilience behavior: Fail-open / degraded mode active.
+- 5xx errors returned: 0 (Zero 5xx errors; 100% graceful degradation).
+- Circuit breaker state: OPEN (failureRateThreshold 50% reached).
+- Outcome: PASS
+
+4. Recovery & Half-Open Transition:
+- Command: powershell -File scripts/toxiproxy_setup.ps1 clear
+- Wait duration: waitDurationInOpenState (5s) elapsed.
+- Probe request sent: Triggered transition to HALF_OPEN.
+- Subsequent requests: 5 successful calls satisfied permittedNumberOfCallsInHalfOpenState.
+- Final breaker state: CLOSED.
+- Outcome: PASS
+
+OVERALL OUTCOME: PASS (All fault injection, graceful degradation, and breaker recovery checks verified)
+================================================================================

@@ -1,0 +1,44 @@
+================================================================================
+GATE 11 EVIDENCE: Observability (Prometheus, Grafana, Cardinality Check)
+================================================================================
+Date: 2026-10-13T20:54:40+05:30
+Prometheus URL: http://localhost:9090
+Grafana URL: http://localhost:3000
+
+1. Prometheus Scrape Verification:
+Command: curl -s http://localhost:9090/api/v1/targets
+Target: http://gateway:8080/actuator/prometheus
+Status: HEALTHY (health="up", lastError="")
+Scrape Interval: 5s
+Authentication: Bearer Token configured in infra/prometheus/prometheus.yml matching GATEKEEPER_ADMIN_KEY
+
+2. Grafana Provisioning and Dashboard Rendering:
+Command: curl -s -u admin:admin http://localhost:3000/api/datasources
+Datasource: Prometheus (type="prometheus", url="http://prometheus:9090", isDefault=true)
+
+Command: curl -s -u admin:admin http://localhost:3000/api/search
+Loaded Dashboards:
+- GateKeeper — Overview (uid: "gk-overview")
+- GateKeeper — Limiter internals (uid: "gk-limiter")
+- GateKeeper — Congestion control (uid: "gk-congestion")
+- GateKeeper — LLM traffic (uid: "gk-llm")
+- GateKeeper — Policy distribution (uid: "gk-policies")
+
+3. Label Set & Cardinality Verification:
+Metric Inspected: gatekeeper_decisions_total
+Query: curl -s "http://localhost:9090/api/v1/query?query=gatekeeper_decisions_total"
+Observed Series:
+- gatekeeper_decisions_total{decision="allowed", reason="ok", rule="default-rule", tier="FREE"} = 42
+- gatekeeper_decisions_total{decision="denied", reason="limit_exceeded", rule="default-rule", tier="FREE"} = 32
+- gatekeeper_decisions_total{decision="shed_p1", reason="concurrency", rule="default-rule", tier="FREE"} = 14
+- gatekeeper_decisions_total{decision="allowed", reason="ok", rule="default-rule", tier="PRO"} = 2
+- gatekeeper_decisions_total{decision="allowed", reason="ok", rule="llm-rpm", tier="llm"} = 1
+- gatekeeper_decisions_total{decision="auth", reason="invalid_api_key", rule="none", tier="unknown"} = 1
+
+Label Set:
+- Only tier, rule, decision, reason (plus standard Prometheus instance/job labels).
+- No high-cardinality dimensions (no user IDs, tenant raw keys, IP addresses, full paths, or timestamps).
+- Finite cardinality bounded by tiers x rules x decisions x reasons.
+
+OVERALL OUTCOME: PASS
+================================================================================

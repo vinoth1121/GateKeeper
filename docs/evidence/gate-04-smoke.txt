@@ -1,0 +1,30 @@
+================================================================================
+GATE 4 EVIDENCE: Smoke test (scripts/smoke.sh against compose stack)
+================================================================================
+Date: 2026-10-13T20:54:07+05:30
+SMOKE_URL: http://localhost:8080
+Stack Services: gateway (8080), mock-upstream (8081), redis (6379), toxiproxy (8474, 26379), prometheus (9090), grafana (3000)
+Command: SMOKE_URL=http://localhost:8080 ./scripts/smoke.sh
+
+Execution Output:
+PASS: health endpoint returns 200 with status UP
+PASS: GET /console/ returns 200
+PASS: free demo key gets 200 before burst
+PASS: burst of 50 free-tier requests produces at least one 429
+PASS: 429 responses carry RateLimit-* headers
+PASS: 429 responses carry Retry-After
+PASS: invalid API key returns 401
+PASS: unknown route returns 404
+PASS: POST /api/policies/dry-run with invalid CEL returns a JSON error
+PASS: POST /api/sandbox/policies increments policy version (1 -> 2)
+PASS: admin endpoint without X-Admin-Key returns 401
+PASS: GET /actuator/prometheus is not publicly exposed (got 404)
+PASS: LLM stream emits multiple data frames
+PASS: LLM stream ends with data: [DONE]
+
+Summary:
+smoke: 14 passed, 0 failed (url: http://localhost:8080)
+Exit code: 0
+
+OVERALL OUTCOME: PASS
+================================================================================

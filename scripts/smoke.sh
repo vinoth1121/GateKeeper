@@ -45,17 +45,29 @@ code="$(http_code -H "X-API-Key: $FREE_KEY" "$SMOKE_URL/demo/hello")"
 report "free demo key gets 200 before burst" $([ "$code" = "200" ]; echo $?)
 
 saw429=1; ratelimit_hdr=1; retryafter_hdr=1
-for _ in $(seq 1 50); do
-  hdrs="$(curl -s -D - -o /dev/null -H "X-API-Key: $FREE_KEY" "$SMOKE_URL/demo/hello")"
-  status="$(printf '%s' "$hdrs" | head -n 1 | tr -d '\r')"
-  case "$status" in
+urls=$(for _ in $(seq 1 50); do echo "$SMOKE_URL/demo/hello"; done)
+if curl -s -Z -V >/dev/null 2>&1; then
+  hdrs="$(curl -s -Z -D - -o /dev/null -H "X-API-Key: $FREE_KEY" $urls)"
+  case "$hdrs" in
     *" 429"*)
       saw429=0
       printf '%s' "$hdrs" | tr -d '\r' | grep -qi 'ratelimit-' && ratelimit_hdr=0
       printf '%s' "$hdrs" | tr -d '\r' | grep -qi 'retry-after:' && retryafter_hdr=0
       ;;
   esac
-done
+else
+  for _ in $(seq 1 50); do
+    hdrs="$(curl -s -D - -o /dev/null -H "X-API-Key: $FREE_KEY" "$SMOKE_URL/demo/hello")"
+    status="$(printf '%s' "$hdrs" | head -n 1 | tr -d '\r')"
+    case "$status" in
+      *" 429"*)
+        saw429=0
+        printf '%s' "$hdrs" | tr -d '\r' | grep -qi 'ratelimit-' && ratelimit_hdr=0
+        printf '%s' "$hdrs" | tr -d '\r' | grep -qi 'retry-after:' && retryafter_hdr=0
+        ;;
+    esac
+  done
+fi
 report "burst of 50 free-tier requests produces at least one 429" "$saw429"
 report "429 responses carry RateLimit-* headers" "$ratelimit_hdr"
 report "429 responses carry Retry-After" "$retryafter_hdr"

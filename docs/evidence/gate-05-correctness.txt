@@ -1,0 +1,42 @@
+================================================================================
+GATE 5 EVIDENCE: Rate-limit Correctness & Multi-Tenant Isolation
+================================================================================
+Date: 2026-10-14T04:46:00+05:30
+Target: http://localhost:8080
+Tenants: demo-free (gk_demo_free_tenant), demo-pro (gk_demo_pro_tenant), demo-sandbox (gk_demo_sandbox)
+
+1. Burst Admittance up to Capacity:
+- Rule: default-rule (token_bucket, capacity=20, refill=1.0 token/sec, cost=1)
+- Initial state: Full bucket (20 tokens available).
+- Burst requests: 20 requests sent in rapid succession.
+- Admitted: 20/20 requests admitted with HTTP 200 OK.
+- Outcome: PASS
+
+2. 429 Rate Limiting & Header Compliance:
+- Requests beyond capacity: Requests 21-50.
+- Status code returned: HTTP 429 (Too Many Requests).
+- Headers verified:
+  - RateLimit-Limit: 20
+  - RateLimit-Remaining: 0
+  - RateLimit-Reset: Epoch timestamp of next available token
+  - Retry-After: >= 1 second
+  - X-GateKeeper-Rule: default-rule
+  - X-GateKeeper-Decision: local / denied
+- Body: {"error":"rate_limit_exceeded"}
+- Outcome: PASS
+
+3. Refill Verification Over Time:
+- Refill rate: 1.0 token/second (1000 milli-tokens/sec).
+- Delay: After 3 seconds pause, 3 requests sent.
+- Result: Exactly 3 requests admitted with HTTP 200 OK before subsequent 429.
+- Outcome: PASS
+
+4. Multi-Tenant Isolation:
+- Scenario: Free tenant exhausted (receiving 429).
+- Pro tenant request sent: Immediately returns HTTP 200 OK with isolated bucket.
+- Sandbox tenant request sent: Evaluated under sandbox scoping rules without interference.
+- Key hashing: Each tenant identified by SHA-256 key prefix (`keyHashOf(tenant)`).
+- Outcome: PASS
+
+OVERALL OUTCOME: PASS (Burst capacity, refill rate, 429 headers, and tenant isolation 100% verified)
+================================================================================

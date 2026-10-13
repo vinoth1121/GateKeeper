@@ -30,7 +30,16 @@ public class AdminKeyGuard {
     }
 
     public boolean isValid(HttpServletRequest request) {
-        String presented = request == null ? null : request.getHeader(ADMIN_KEY_HEADER);
+        if (request == null) {
+            return false;
+        }
+        String presented = request.getHeader(ADMIN_KEY_HEADER);
+        if (presented == null || presented.isBlank()) {
+            String auth = request.getHeader("Authorization");
+            if (auth != null && auth.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                presented = auth.substring(7).trim();
+            }
+        }
         if (presented == null || presented.isBlank()) {
             return false;
         }
