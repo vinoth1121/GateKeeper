@@ -1,0 +1,79 @@
+name: gatekeeper
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    ports:
+      - "127.0.0.1:8474:8474"
+      - "127.0.0.1:26379:26379"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+
+  mock-upstream:
+    build:
+      context: ..
+      dockerfile: mock-upstream/Dockerfile
+    expose:
+      - "8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: gateway/Dockerfile
+    environment:
+      GATEKEEPER_REDIS_URL: redis://toxiproxy:26379
+      GATEKEEPER_UPSTREAM_URL: http://mock-upstream:8081
+      GATEKEEPER_ADMIN_KEY: dev-admin-key-change-me
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 60s
+    depends_on:
+      mock-upstream:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      toxiproxy:
+        condition: service_started
+    restart: unless-stopped

@@ -1,0 +1,17 @@
+# Build output
+target/
+dist/
+*.class
+# IDE
+.idea/
+*.iml
+.vscode/
+# Node (console tooling)
+node_modules/
+# Local env / secrets
+.env
+# Test artifacts
+results/*.raw
+# Logs
+*.log
+cp.txt

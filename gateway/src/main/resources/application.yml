@@ -1,0 +1,45 @@
+# SCG-MVC route prefix verified against
+# ~/.m2/repository/org/springframework/cloud/spring-cloud-gateway-server-mvc/4.3.5/
+#   spring-cloud-gateway-server-mvc-4.3.5.jar META-INF/spring-configuration-metadata.json:
+#   {"name":"spring.cloud.gateway.server.webmvc.routes", ...} (also legacy
+#   "spring.cloud.gateway.mvc.routes" exists; the webmvc namespace is the current one)
+# Property names match io/gatekeeper/config/GateKeeperProperties.java:
+#   gatekeeper.redis.url, gatekeeper.upstream.base-url, gatekeeper.trusted-proxies
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gatekeeper-gateway
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: demo
+              uri: ${GATEKEEPER_UPSTREAM_URL:http://localhost:8081}
+              predicates:
+                - Path=/demo/**
+            - id: mock
+              uri: ${GATEKEEPER_UPSTREAM_URL:http://localhost:8081}
+              predicates:
+                - Path=/mock/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+gatekeeper:
+  redis:
+    url: ${GATEKEEPER_REDIS_URL:redis://localhost:6379}
+  upstream:
+    base-url: ${GATEKEEPER_UPSTREAM_URL:http://localhost:8081}
+  trusted-proxies: ${GATEKEEPER_TRUSTED_PROXIES:}

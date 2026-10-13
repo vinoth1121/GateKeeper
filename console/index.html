@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GateKeeper signal box</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#page-content">Skip to main content</a>
+  <header>
+    <h1>GateKeeper signal box</h1>
+    <button id="theme-toggle" class="btn" type="button">Theme</button>
+  </header>
+  <nav class="main-nav" aria-label="Main navigation">
+    <a href="#/overview">Overview</a>
+    <a href="#/playground">Playground</a>
+    <a href="#/policies">Policies</a>
+    <a href="#/congestion">Congestion</a>
+    <a href="#/redis-failure">Redis failure</a>
+    <a href="#/llm">LLM meter</a>
+    <a href="#/benchmarks">Benchmarks</a>
+  </nav>
+  <div id="track-diagram" aria-label="Request track diagram">
+    <div class="seg" id="seg-client"><span class="lamp lamp-off"></span><span class="seg-label">Client</span></div>
+    <div class="seg" id="seg-gateway"><span class="lamp lamp-off"></span><span class="seg-label">Gateway</span></div>
+    <div class="seg" id="seg-redis"><span class="lamp lamp-off"></span><span class="seg-label">Redis</span></div>
+    <div class="seg" id="seg-upstream"><span class="lamp lamp-off"></span><span class="seg-label">Upstream</span></div>
+  </div>
+  <div id="waking-banner" hidden>Instance may be waking up — the free tier sleeps after 15 minutes idle</div>
+  <main id="page-content" aria-live="polite"></main>
+  <footer>GateKeeper operations console. Live data comes from the public stats endpoint.</footer>
+  <script src="js/pages/overview.js"></script>
+  <script src="js/pages/playground.js"></script>
+  <script src="js/pages/policies.js"></script>
+  <script src="js/pages/congestion.js"></script>
+  <script src="js/pages/redis-failure.js"></script>
+  <script src="js/pages/llm.js"></script>
+  <script src="js/pages/benchmarks.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
