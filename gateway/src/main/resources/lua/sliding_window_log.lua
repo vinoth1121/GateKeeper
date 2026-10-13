@@ -32,7 +32,7 @@ end
 
 for i = 1, cost do
     local id = redis.call('INCR', counter)
-    redis.call('ZADD', zset, now + i, tostring(now) .. ':' .. tostring(id))
+    redis.call('ZADD', zset, now, tostring(now) .. ':' .. tostring(id))
 end
 
 redis.call('PEXPIRE', zset, window * 2 + 1000)
