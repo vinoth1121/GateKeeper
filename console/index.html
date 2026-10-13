@@ -3,17 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GateKeeper signal box</title>
+  <title>GateKeeper Signal Box &mdash; Distributed Edge Gateway Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
   <a class="skip-link" href="#page-content">Skip to main content</a>
   <header>
-    <h1>GateKeeper signal box</h1>
-    <button id="theme-toggle" class="btn" type="button">Theme</button>
+    <div class="header-brand">
+      <h1>GateKeeper signal box</h1>
+      <span class="brand-badge live-dot">LIVE EDGE</span>
+      <span class="brand-badge" style="border-color: var(--edge); color: var(--dim);">JDK 21 / VIRTUAL THREADS</span>
+    </div>
+    <div class="header-actions">
+      <button id="theme-toggle" class="btn" type="button">Theme</button>
+    </div>
   </header>
   <nav class="main-nav" aria-label="Main navigation">
     <a href="#/overview">Overview</a>
@@ -24,15 +31,20 @@
     <a href="#/llm">LLM meter</a>
     <a href="#/benchmarks">Benchmarks</a>
   </nav>
-  <div id="track-diagram" aria-label="Request track diagram">
-    <div class="seg" id="seg-client"><span class="lamp lamp-off"></span><span class="seg-label">Client</span></div>
-    <div class="seg" id="seg-gateway"><span class="lamp lamp-off"></span><span class="seg-label">Gateway</span></div>
-    <div class="seg" id="seg-redis"><span class="lamp lamp-off"></span><span class="seg-label">Redis</span></div>
-    <div class="seg" id="seg-upstream"><span class="lamp lamp-off"></span><span class="seg-label">Upstream</span></div>
-  </div>
+
+  <!-- Interactive SVG Topology Signal Box -->
+  <div id="track-diagram" aria-label="Request track diagram"></div>
+
   <div id="waking-banner" hidden>Instance may be waking up — the free tier sleeps after 15 minutes idle</div>
   <main id="page-content" aria-live="polite"></main>
-  <footer>GateKeeper operations console. Live data comes from the public stats endpoint.</footer>
+  <footer>GateKeeper Operations Console &bull; High-Performance Resilient Gateway &bull; Live Telemetry</footer>
+
+  <!-- Core Components -->
+  <script src="js/components/sparkline.js"></script>
+  <script src="js/components/token-bucket.js"></script>
+  <script src="js/components/track-diagram.js"></script>
+
+  <!-- Pages -->
   <script src="js/pages/overview.js"></script>
   <script src="js/pages/playground.js"></script>
   <script src="js/pages/policies.js"></script>

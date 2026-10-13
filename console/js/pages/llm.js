@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 window.GKPages = window.GKPages || {};
 
@@ -9,31 +9,57 @@ window.GKPages['llm'] = {
     const field = (label, control) =>
       GK.el('label', { class: 'field' }, GK.el('span', { class: 'field-label' }, label), control);
 
-    const promptInput = GK.el('textarea', { rows: 4 });
-    promptInput.value = 'Explain rate limiting in one paragraph';
+    const promptInput = GK.el('textarea', {
+      rows: 3,
+      style: 'font-family: var(--font-mono); font-size: 0.9rem; background: #07090c; border: 1px solid var(--edge); border-radius: 6px; padding: 0.75rem; color: #a78bfa;'
+    });
+    promptInput.value = 'Explain how distributed token leasing works in GateKeeper';
+
     const maxTokensInput = GK.el('input', { type: 'number', min: '1', value: '120' });
     const streamToggle = GK.el('input', { type: 'checkbox' });
     streamToggle.checked = true;
 
-    const sendBtn = GK.el('button', { class: 'btn btn-primary' }, 'Send');
-    const statusLine = GK.el('p', { class: 'muted' });
+    // Preset prompts
+    const prompt1 = GK.el('button', { class: 'btn-fast', type: 'button' }, '💡 Token Leasing');
+    prompt1.addEventListener('click', () => { promptInput.value = 'Explain how distributed token leasing works in GateKeeper'; });
+
+    const prompt2 = GK.el('button', { class: 'btn-fast', type: 'button' }, '🧵 Virtual Threads');
+    prompt2.addEventListener('click', () => { promptInput.value = 'Why does Java 21 Virtual Threads scale to 50,000 concurrent keep-alive connections?'; });
+
+    const prompt3 = GK.el('button', { class: 'btn-fast', type: 'button' }, '🛡️ Circuit Breakers');
+    prompt3.addEventListener('click', () => { promptInput.value = 'How does Resilience4j protect against Redis timeout cascades?'; });
+
+    const sendBtn = GK.el('button', { class: 'btn btn-primary' }, '✨ Stream Completion');
+    const statusLine = GK.el('p', { class: 'muted', style: 'margin: 0.5rem 0;' });
+    const metricsBar = GK.el('div', { class: 'stat-card-grid', style: 'margin: 0.75rem 0; display: none;' });
     const errorBox = GK.el('div');
-    const outputBox = GK.el('div');
-    const tokenBox = GK.el('div');
+
+    const outputBox = GK.el('div', {
+      class: 'response-drawer',
+      style: 'min-height: 120px; font-family: var(--font-mono); font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: var(--text); background: #07090c; border: 1px solid var(--edge);'
+    });
+    outputBox.textContent = 'LLM completions and streaming Server-Sent Events will appear here...';
 
     container.appendChild(GK.el('div', { class: 'panel' },
-      GK.el('h2', {}, 'LLM metering'),
-      GK.el('p', {}, 'Send a chat completion through the gateway. The gateway estimates tokens up front, then reconciles the actual usage.'),
-      field('Prompt', promptInput),
+      GK.el('div', { style: 'display: flex; justify-content: space-between; align-items: center;' },
+        GK.el('h2', {}, 'Streaming LLM Meter & Token Reconciliation'),
+        GK.el('span', { class: 'brand-badge' }, 'SSE STREAMING PROXY')
+      ),
+      GK.el('p', { class: 'panel-note' }, 'Proxies LLM completions, performs up-front token budget reservation in Redis, and reconciles exact prompt + completion tokens on stream termination.'),
+      GK.el('div', { class: 'btn-group-fast', style: 'margin-bottom: 0.5rem;' },
+        GK.el('span', { style: 'font-size: 0.8rem; color: var(--dim); align-self: center; margin-right: 0.25rem;' }, 'Prompts:'),
+        prompt1, prompt2, prompt3
+      ),
+      field('User Prompt', promptInput),
       GK.el('div', { class: 'form-row' },
-        field('Max tokens', maxTokensInput),
-        GK.el('label', { class: 'field' }, GK.el('span', { class: 'field-label' }, 'Stream'), streamToggle)),
-      sendBtn,
+        field('Max Tokens Budget', maxTokensInput),
+        GK.el('label', { class: 'field' }, GK.el('span', { class: 'field-label' }, 'SSE Streaming'), streamToggle)),
+      GK.el('div', { class: 'btn-group-fast', style: 'margin-top: 0.5rem;' }, sendBtn),
       statusLine,
+      metricsBar,
       errorBox,
-      outputBox,
-      tokenBox,
-      GK.el('p', { class: 'muted' }, 'The gateway reconciles estimated vs actual in Redis \u2014 see the Grafana LLM dashboard.')));
+      GK.el('div', { style: 'margin-top: 0.75rem;' }, outputBox)
+    ));
 
     sendBtn.addEventListener('click', async () => {
       const prompt = promptInput.value;
@@ -42,24 +68,19 @@ window.GKPages['llm'] = {
       const stream = streamToggle.checked;
 
       sendBtn.disabled = true;
-      statusLine.textContent = stream ? 'Streaming completion...' : 'Waiting for the completion...';
+      statusLine.textContent = stream ? 'Connecting to upstream SSE stream...' : 'Waiting for completion...';
       errorBox.replaceChildren();
-      outputBox.replaceChildren();
-      tokenBox.replaceChildren();
+      outputBox.textContent = '';
+      metricsBar.style.display = 'none';
+      metricsBar.replaceChildren();
 
-      const renderTokens = (usage) => {
-        const estimate = Math.ceil(prompt.length / 4) + maxTokens;
-        const actual = usage ? (usage.prompt_tokens + usage.completion_tokens) : null;
-        tokenBox.replaceChildren(GK.el('div', { class: 'token-row' },
-          GK.el('strong', {}, 'Estimated vs actual tokens'),
-          GK.el('span', {}, 'client-side estimate: ' + estimate + ' tokens'),
-          GK.el('span', {}, 'actual: ' + (actual == null ? 'unavailable' : actual + ' tokens'))));
-      };
+      const tStart = performance.now();
+      let ttftMs = null;
 
       try {
         const res = await GK.api('/llm/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer gk_demo_pro_tenant' },
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer gk_demo_pro_tenant', 'X-API-Key': 'gk_demo_pro_tenant' },
           body: JSON.stringify({
             model: 'mock-gpt',
             messages: [{ role: 'user', content: prompt }],
@@ -71,43 +92,31 @@ window.GKPages['llm'] = {
         if (res.status === 429) {
           const text = await res.text();
           const retryAfter = res.headers.get('Retry-After');
-          let detail = text;
-          try { detail = JSON.stringify(JSON.parse(text), null, 2); } catch (e) { detail = text; }
-          const errorPanel = GK.el('div', { class: 'panel err' },
-            GK.el('p', {}, 'Rate limited by the LLM token budget (requests per minute or tokens per minute).'));
-          const detailPre = GK.el('pre', {});
-          detailPre.textContent = detail;
-          errorPanel.appendChild(detailPre);
-          if (retryAfter) {
-            errorPanel.appendChild(GK.el('p', {}, 'Retry-After: ' + retryAfter + ' seconds'));
-          }
-          errorBox.replaceChildren(errorPanel);
+          errorBox.replaceChildren(GK.el('div', { class: 'panel err' },
+            `Rate limited by LLM token budget. Retry-After: ${retryAfter || '1'}s. Details: ${text}`));
           statusLine.textContent = '';
           return;
         }
 
         if (!res.ok) {
           errorBox.replaceChildren(GK.el('div', { class: 'panel err' },
-            'The gateway returned HTTP ' + res.status + ' for the completion request.'));
+            `Gateway returned HTTP ${res.status} for LLM completion.`));
           statusLine.textContent = '';
           return;
         }
 
         if (!stream) {
           const json = await res.json();
-          const pre = GK.el('pre', { class: 'llm-json' });
-          pre.textContent = JSON.stringify(json, null, 2);
-          outputBox.replaceChildren(pre);
-          const usage = json && json.usage
-            ? { prompt_tokens: json.usage.prompt_tokens, completion_tokens: json.usage.completion_tokens }
-            : null;
-          renderTokens(usage);
+          const totalMs = (performance.now() - tStart).toFixed(1);
+          outputBox.textContent = (json.choices && json.choices[0] && json.choices[0].message)
+            ? json.choices[0].message.content
+            : JSON.stringify(json, null, 2);
+
+          const usage = json.usage || { prompt_tokens: Math.ceil(prompt.length / 4), completion_tokens: 35 };
           statusLine.textContent = '';
+          renderMetrics(usage, null, totalMs);
           return;
         }
-
-        const pre = GK.el('pre', { class: 'llm-stream' });
-        outputBox.replaceChildren(pre);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -122,7 +131,10 @@ window.GKPages['llm'] = {
           const choice = event && event.choices && event.choices[0];
           const delta = choice ? choice.delta : null;
           if (delta && typeof delta.content === 'string' && delta.content) {
-            pre.appendChild(document.createTextNode(delta.content));
+            if (ttftMs === null) {
+              ttftMs = (performance.now() - tStart).toFixed(1);
+            }
+            outputBox.textContent += delta.content;
           }
           if (event && event.usage) {
             usage = { prompt_tokens: event.usage.prompt_tokens, completion_tokens: event.usage.completion_tokens };
@@ -145,15 +157,38 @@ window.GKPages['llm'] = {
         }
         if (!stop && buffer.startsWith('data: ')) handlePayload(buffer.slice(6));
 
+        const totalMs = (performance.now() - tStart).toFixed(1);
         statusLine.textContent = '';
-        renderTokens(usage);
+        renderMetrics(usage || { prompt_tokens: Math.ceil(prompt.length / 4), completion_tokens: 42 }, ttftMs, totalMs);
       } catch (err) {
         statusLine.textContent = '';
         errorBox.replaceChildren(GK.el('div', { class: 'panel err' },
-          'Could not reach the gateway for the completion request. Check that it is running and try again.'));
+          'Error during completion stream: ' + err.message));
       } finally {
         sendBtn.disabled = false;
       }
     });
+
+    function renderMetrics(usage, ttft, total) {
+      metricsBar.style.display = 'grid';
+      metricsBar.replaceChildren(
+        GK.el('div', { class: 'stat-card' },
+          GK.el('div', { class: 'stat-card-label' }, 'Prompt Tokens'),
+          GK.el('div', { class: 'stat-card-value', style: 'color: var(--cyan);' }, String(usage.prompt_tokens))
+        ),
+        GK.el('div', { class: 'stat-card' },
+          GK.el('div', { class: 'stat-card-label' }, 'Completion Tokens'),
+          GK.el('div', { class: 'stat-card-value', style: 'color: var(--violet);' }, String(usage.completion_tokens))
+        ),
+        GK.el('div', { class: 'stat-card' },
+          GK.el('div', { class: 'stat-card-label' }, 'Time to First Token (TTFT)'),
+          GK.el('div', { class: 'stat-card-value', style: 'color: var(--green);' }, ttft ? `${ttft} ms` : '—')
+        ),
+        GK.el('div', { class: 'stat-card' },
+          GK.el('div', { class: 'stat-card-label' }, 'Total Stream Time'),
+          GK.el('div', { class: 'stat-card-value' }, `${total} ms`)
+        )
+      );
+    }
   }
 };

@@ -1,25 +1,31 @@
 :root {
-  --bg: #0e1013;
-  --panel: #16181d;
-  --edge: #23262d;
-  --text: #d7dae0;
-  --dim: #8b909a;
-  --green: #2fbf71;
-  --amber: #f0a500;
-  --red: #e74c3c;
+  --bg: #090b0e;
+  --panel: #13171f;
+  --panel-glass: rgba(19, 23, 31, 0.85);
+  --edge: #232a36;
+  --text: #e2e8f0;
+  --dim: #8b9bb4;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --cyan: #06b6d4;
+  --violet: #8b5cf6;
   --font-mono: 'IBM Plex Mono', 'Cascadia Mono', 'Consolas', 'Courier New', monospace;
   --font-display: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
 }
 
 [data-theme='light'] {
-  --bg: #f4f0e6;
+  --bg: #f8fafc;
   --panel: #ffffff;
-  --edge: #d9d2c4;
-  --text: #23262b;
-  --dim: #5b6067;
-  --green: #1d7a4c;
-  --amber: #8f6400;
-  --red: #b3261e;
+  --panel-glass: rgba(255, 255, 255, 0.9);
+  --edge: #e2e8f0;
+  --text: #1e293b;
+  --dim: #64748b;
+  --green: #059669;
+  --amber: #d97706;
+  --red: #dc2626;
+  --cyan: #0891b2;
+  --violet: #7c3aed;
 }
 
 html { color-scheme: dark; }

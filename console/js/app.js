@@ -111,21 +111,18 @@
     }
   }
 
-  function setLamp(segmentId, lampClass) {
-    const lamp = document.querySelector('#' + segmentId + ' .lamp');
-    if (lamp) lamp.className = 'lamp ' + lampClass;
-  }
+  let trackDiagramInstance = null;
 
   function updateTrackDiagram(stats) {
-    const rps = Number((stats && stats.rps) || 0);
-    setLamp('seg-client', 'lamp-green');
-    setLamp('seg-gateway', rps > 0 ? 'lamp-green' : 'lamp-off');
-    const breaker = stats ? stats.breakerState : undefined;
-    if (breaker === 'CLOSED' || breaker === 0) setLamp('seg-redis', 'lamp-green');
-    else if (breaker === 'HALF_OPEN' || breaker === 1) setLamp('seg-redis', 'lamp-amber');
-    else if (breaker === 'OPEN' || breaker === 2) setLamp('seg-redis', 'lamp-red');
-    else setLamp('seg-redis', 'lamp-off');
-    setLamp('seg-upstream', rps > 0 ? 'lamp-green' : 'lamp-off');
+    if (!trackDiagramInstance && window.GKTrackDiagram) {
+      const container = document.getElementById('track-diagram');
+      if (container) {
+        trackDiagramInstance = new window.GKTrackDiagram(container);
+      }
+    }
+    if (trackDiagramInstance) {
+      trackDiagramInstance.update(stats);
+    }
   }
 
   function poll() {
