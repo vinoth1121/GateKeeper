@@ -12,6 +12,7 @@ param(
     [Parameter(Position = 1)][string]$Ms = "100"
 )
 $ErrorActionPreference = "Stop"
+$PSDefaultParameterValues['Invoke-RestMethod:UserAgent'] = 'toxiproxy/2.11'
 
 $Api = if ($env:TOXIPROXY_URL) { $env:TOXIPROXY_URL } else { "http://localhost:8474" }
 $Proxy = "redis"

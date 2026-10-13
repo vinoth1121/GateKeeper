@@ -55,7 +55,9 @@ class ReturnTokensTest {
                 20, 20.0, 0, 0, 1, false);
 
         // Consume one token: fills a 20-token lease, leaves 19 locally, 0 centrally.
-        assertThat(node.service().check("return", "free", "kh", spec).allowed()).isTrue();
+        var d1 = node.service().check("return", "free", "kh", spec);
+        System.out.println("ReturnTokens node1 check: " + d1);
+        assertThat(d1.allowed()).isTrue();
         long centralBefore = centralTokens(key);
         System.out.println("ReturnTokens REAL: central tokens after lease grant = " + centralBefore);
 
@@ -78,7 +80,9 @@ class ReturnTokensTest {
 
         // Shutdown path (@PreDestroy): leftover from a fresh node goes back to Redis.
         Node node2 = support.buildNode(props);
-        assertThat(node2.service().check("return", "free", "kh2", spec).allowed()).isTrue();
+        var d2 = node2.service().check("return", "free", "kh2", spec);
+        System.out.println("ReturnTokens node2 check: " + d2);
+        assertThat(d2.allowed()).isTrue();
         String key2 = RedisRateLimiterService.bucketKey("return", "kh2", "return-rule");
         long before2 = centralTokens(key2);
         node2.leases().shutdown();

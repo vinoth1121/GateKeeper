@@ -37,7 +37,7 @@ public final class LocalLeaseManager {
     public static final String LEASE = "lease";
     public static final String RETURN_TOKENS = "return_tokens";
     static final long MAX_TTL_SECONDS = 3600;
-    static final long EMPTY_WAIT_MS = 50;
+    static final long EMPTY_WAIT_MS = 250;
 
     private final RedisGuard guard;
     private final LuaScriptManager scripts;
