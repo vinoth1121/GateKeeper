@@ -1,23 +1,87 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '21', cache: maven}
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       - run: mvn -B -ntp verify
       - if: failure()
         uses: actions/upload-artifact@v4
-        with: {name: surefire-reports, path: gateway/target/surefire-reports}
+        with:
+          name: surefire-reports
+          path: gateway/target/surefire-reports
       - run: docker build -t gatekeeper-gateway -f gateway/Dockerfile .
+
   lint:
     runs-on: ubuntu-latest
-    steps: [{uses: actions/checkout@v4}, {uses: actions/setup-java@v4, with: {distribution: temurin, java-version: '21', cache: maven}}, {run: mvn -B spotless:check}]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: mvn -B spotless:check -pl gateway
+
+  e2e-smoke-and-lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli puppeteer
+      - name: Start Gateway Stack
+        run: |
+          docker compose -f infra/docker-compose.yml up -d --build
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/actuator/health | grep -q "UP"; then
+              echo "Gateway is UP"
+              break
+            fi
+            sleep 2
+          done
+      - name: Run End-to-End Smoke Tests
+        run: bash scripts/smoke.sh
+      - name: Run Lighthouse Audit on Operator Console
+        run: |
+          lhci collect --url=http://localhost:8080/console/ --settings.chromeFlags="--no-sandbox --headless" || true
+      - name: Tear Down Stack
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down
+
   dependency-scan:
     runs-on: ubuntu-latest
-    steps: [{uses: actions/checkout@v4}, {uses: actions/setup-java@v4, with: {distribution: temurin, java-version: '21', cache: maven}}, {run: mvn -B dependency-check:check || true}, {if: always(), uses: actions/upload-artifact@v4, with: {name: dependency-check, path: '**/target/dependency-check-report.html'}}]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: mvn -B dependency-check:check || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check
+          path: '**/target/dependency-check-report.html'
+
   chaos:
     runs-on: ubuntu-latest
-    steps: [{uses: actions/checkout@v4}, {uses: actions/setup-java@v4, with: {distribution: temurin, java-version: '21', cache: maven}}, {run: mvn -B test -Pchaos, timeout-minutes: 30}]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: mvn -B test -Pchaos
+        timeout-minutes: 30

@@ -71,6 +71,12 @@ try {
                 -e DIRECT_URL=http://mock-upstream:8081 `
                 -v "${Repo}:/work" -w /work `
                 grafana/k6:2.3.0 run loadtest/overhead.js
+        } elseif ($s -eq "connections") {
+            # On Windows, default ephemeral port range is ~16k ports (49152-65535).
+            # Default to 2000 connections unless explicitly overridden to prevent WSAEADDRINUSE.
+            $connCount = if ($env:CONNECTIONS) { $env:CONNECTIONS } else { "2000" }
+            Write-Host "Running connections test with CONNECTIONS=$connCount (Windows ephemeral port safeguard)"
+            & k6 run -e CONNECTIONS=$connCount "loadtest/$s.js"
         } else {
             & k6 run "loadtest/$s.js"
         }
